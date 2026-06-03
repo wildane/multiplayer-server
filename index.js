@@ -1,6 +1,14 @@
 const WebSocket = require("ws");
+const http = require("http");
 
-const wss = new WebSocket.Server({ port: process.env.PORT || 3000 });
+const PORT = process.env.PORT;
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("WebSocket server is running");
+});
+
+const wss = new WebSocket.Server({ server });
 
 const players = {};
 
@@ -39,4 +47,8 @@ wss.on("connection", (ws) => {
       }
     });
   }
+});
+
+server.listen(PORT, () => {
+  console.log("Server running on port", PORT);
 });
