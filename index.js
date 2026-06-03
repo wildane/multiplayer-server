@@ -13,9 +13,13 @@ const wss = new WebSocket.Server({ server });
 const players = {};
 
 // =========================
-// BROADCAST (GLOBAL SAFE)
+// BROADCAST (CLEAN LOG)
 // =========================
 function broadcast() {
+  const count = Object.keys(players).length;
+
+  console.log("[BROADCAST] players =", count);
+
   const msg = JSON.stringify({
     type: "world",
     players
@@ -26,8 +30,6 @@ function broadcast() {
       client.send(msg);
     }
   });
-
-  console.log("[BROADCAST]", msg);
 }
 
 // =========================
@@ -41,7 +43,9 @@ wss.on("connection", (ws) => {
 
   players[id] = { x: 0, y: 0 };
 
-  // send init AFTER register
+  console.log("[STATE AFTER CONNECT]", Object.keys(players));
+
+  // send init (server assigned id)
   ws.send(JSON.stringify({
     type: "init",
     id,
@@ -55,21 +59,21 @@ wss.on("connection", (ws) => {
   // =========================
   ws.on("message", (msg) => {
 
+    let data;
     try {
-      const data = JSON.parse(msg);
-
-      if (data.type === "move") {
-
-        players[id] = {
-          x: data.x,
-          y: data.y
-        };
-
-        broadcast();
-      }
-
+      data = JSON.parse(msg);
     } catch (e) {
-      console.log("[ERROR PARSE]", e);
+      return;
+    }
+
+    if (data.type === "move") {
+
+      players[id] = {
+        x: data.x,
+        y: data.y
+      };
+
+      broadcast();
     }
   });
 
@@ -81,10 +85,13 @@ wss.on("connection", (ws) => {
     console.log("[DISCONNECT]", id);
 
     delete players[id];
+
+    console.log("[STATE AFTER DISCONNECT]", Object.keys(players));
+
     broadcast();
   });
 });
 
 server.listen(PORT, () => {
-  console.log("Server running on", PORT);
+  console.log("🔥 SERVER STARTED ON PORT", PORT);
 });
